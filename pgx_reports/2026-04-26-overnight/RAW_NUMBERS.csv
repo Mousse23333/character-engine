@@ -1,0 +1,18 @@
+experiment,metric,value,unit,sample_size,notes,timestamp
+E-00,realesrgan_x4_inference_time,0.63,seconds,1,GB10 CUDA fp16,2026-04-26T22:02:00Z
+E-00,realesrgan_x4_peak_gpu_memory,0.76,GB,1,GB10 fp16 inference,2026-04-26T22:02:00Z
+E-00,gradient_strength_original,7.51,arbitrary,1,189x267 JPEG (high due to compression),2026-04-26T22:02:00Z
+E-00,gradient_strength_bicubic,1.90,arbitrary,1,756x1068 PIL bicubic,2026-04-26T22:02:00Z
+E-00,gradient_strength_realesrgan_x4,2.76,arbitrary,1,756x1068 RRDBNet,2026-04-26T22:02:00Z
+E-00,esrgan_vs_bicubic_gain,45,percent,1,gradient strength uplift,2026-04-26T22:02:00Z
+E-13,openpose_keypoints_alice_orig,0,count,1,189x267 anime ref,2026-04-26T22:15:00Z
+E-13,openpose_keypoints_alice_x4,0,count,1,756x1068 upscaled,2026-04-26T22:15:00Z
+E-13,openpose_inference_time,0.65,seconds,1,CPU pure-pytorch,2026-04-26T22:15:00Z
+E-13,openpose_pixels_nonzero,0,count,1,out of 360448,2026-04-26T22:15:00Z
+E-16,vllm_gpu_held,105688,MiB,1,Qwen3-30B PID 11230,2026-04-26T22:00:00Z
+E-16,unified_memory_total,119.6,GB,1,GB10 spec,2026-04-26T22:00:00Z
+E-16,unified_memory_free,6,GB,1,under vLLM,2026-04-26T22:00:00Z
+E-16,llm_judge_latency,160,ms,1,vLLM Qwen3-30B 2-token reply,2026-04-26T22:08:00Z
+E-16,flash_attn_functional,1,boolean,1,smoke test passed on GB10 aarch64,2026-04-26T21:58:00Z
+E-16,disk_free_workspace,695,GB,1,/dev/nvme0n1p2,2026-04-26T22:00:00Z
+E-16,downloads_completed_GB,95,GB,11,SDXL+Annotators+IP-Adapter+InstantID+Real-ESRGAN+FaceID+Qwen,2026-04-26T22:30:00Z
