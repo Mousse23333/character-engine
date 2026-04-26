@@ -91,7 +91,7 @@ This is just a wording fix in the spec. Not architectural.
 
 ---
 
-## D-05 — `Flux Kontext` is closed-source; OmniGen2 is the open replacement
+## D-05 — `Flux Kontext` is closed-source; OmniGen2 is the open replacement (verified install)
 
 **Severity**: 🟡 **easy fix, change tool name**
 
@@ -100,6 +100,11 @@ it "open-source" in §4.1.
 
 **Resolution**: replace with **OmniGen2** (`VectorSpaceLab/OmniGen2`,
 Apache-2.0, multi-reference image generation, available on HuggingFace).
+
+**Validation tonight**: cloned OmniGen2 + installed deps + verified
+`from omnigen2.pipelines.omnigen2.pipeline_omnigen2 import OmniGen2Pipeline`
+imports cleanly on ARM64. Install-ready when GPU frees. Estimated VRAM:
+~12-15 GB (similar SDXL-scale).
 
 ---
 
