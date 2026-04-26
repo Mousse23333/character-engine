@@ -11,7 +11,7 @@
 
 > **Read order**: this file → `BLOCKING.md` → `EXECUTIVE_SUMMARY.md` → `ARCHITECT_DECISIONS.md`
 
-**Current status**: 📝 **Writing & committing reports — heavy GPU work blocked by vLLM all night.**
+**Current status**: ✅ **Reports complete and pushed to GitHub (5 commits). Heavy GPU work was blocked by vLLM all night, but install-path validation work continued substantially.**
 
 The investigation hit a blocker at the start: your vLLM (PID 11230, serving Qwen3-30B for `/workspace/numara`) holds 103 GB of unified memory; only 6 GB free. I wrote a `BLOCKING.md` early to flag it, then spent the night doing **everything that doesn't need GPU**:
 
@@ -157,10 +157,50 @@ Mutated plan (post-blocking, what actually ran):
 ### [22:50 UTC] Third commit + push
 - All recent findings preserved to remote (`df686bd`)
 
-### [post-22:50 UTC] Background tasks still running
-- Model downloads: now at 184 GB cached (Hunyuan3D-2 + 2.1, IP-Adapter family, InstantID, SDXL, Annotators, Real-ESRGAN). Wan 2.2 14B + TRELLIS still queuing.
+### [22:55 UTC] OmniGen2 install validated on ARM ✅
+- Cloned VectorSpaceLab/OmniGen2
+- `from omnigen2.pipelines.omnigen2.pipeline_omnigen2 import OmniGen2Pipeline` works on ARM64
+- Confirms F2 fact-correction: OmniGen2 is the proper open replacement for Flux Kontext
+- Pushed fifth commit (`e1d8b98`)
+
+### [22:57 UTC] decord ARM build attempted
+- Cloned `dmlc/decord`
+- Build needs `libavcodec-dev`/`libavformat-dev` which require sudo to install
+- Documented workaround (imageio replacement, ~50 LoC) in E-11 README
+- This is the **only Wan 2.2 ARM blocker**
+
+### [post-22:55 UTC] Background tasks still running
+- Model downloads: now at **195 GB cached** (Hunyuan3D-2 (55GB), Hunyuan3D-2.1 (14GB), SDXL (72GB), IP-Adapter family (30GB), Annotators (10GB), Real-ESRGAN, InstantID, FaceID). TRELLIS started (402MB so far), Wan 2.2 14B still queuing.
 - vLLM continues to hold 103 GB. **No change**.
-- Auto-resume scripts ready and validated.
+- Auto-resume scripts validated (`bash -n` clean, config tuned per LLM-Judge review).
+- **All architect-facing reports preserved to GitHub across 5 commits.**
+
+---
+
+## Validated install paths (concrete, tested on this hardware)
+
+| Tool | Verdict | Evidence |
+|---|---|---|
+| Real-ESRGAN | ✅ runs | E-00 sample images |
+| OpenPose (controlnet_aux) | ✅ runs but **fails on anime** | E-13 |
+| flash_attn 2.7.4 | ✅ functional on GB10 | smoke test passed |
+| Hunyuan3D 2.0 custom CUDA op | ✅ compiles + imports | nvcc + sm_120 build log |
+| Hunyuan3D 2.0 mesh_processor | ✅ compiles + imports | C++ pybind11 build |
+| Hunyuan3D 2.5 weights | ⚠️ in download queue | model card confirmed available |
+| UniRig src/model | ✅ imports (without bpy/open3d) | tested |
+| UniRig (full) | ❌ blocked on bpy + open3d + spconv | each documented |
+| torch_scatter (UniRig dep) | ✅ compiles from source on ARM | v2.1.2 |
+| Wan 2.2 (T2V/I2V) | ⚠️ **only `decord` blocks** | every other dep installs |
+| Wan 2.2 Animate-14B | ⚠️ same single blocker | needs decord patch |
+| OmniGen2 (Flux Kontext open replacement) | ✅ install + import OK | tested |
+| LLM-as-Judge via Qwen3-30B vLLM | ✅ functional + catches real bugs | demo at `E-99/llm_judge_demo.json` |
+| TRELLIS | ⚠️ 402MB downloaded, untested | docs say x86-only validated |
+| onnxruntime-gpu | ❌ no ARM wheel | documented |
+| Blender (binary) | ❌ libX11 missing, no sudo | documented |
+| `bpy` PyPI | ❌ no Linux ARM wheel | documented |
+| `open3d` | ❌ no Linux ARM wheel | documented |
+| `decord` | ❌ no ARM wheel; needs ffmpeg-dev to build | documented |
+| `spconv-cu120` | ❌ no cp312/ARM wheel | documented |
 
 ---
 
