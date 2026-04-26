@@ -84,7 +84,7 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
 ).to("cuda")
 pipe.load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models",
                      weight_name="ip-adapter-plus_sdxl_vit-h.safetensors")
-pipe.set_ip_adapter_scale(0.85)
+pipe.set_ip_adapter_scale(0.55)  # adjusted from 0.85 per LLM-as-Judge config review
 pipe.enable_attention_slicing()
 
 POSES = [
@@ -117,7 +117,7 @@ t0 = time.time()
 candidates = []
 for i, prompt in enumerate(prompts[:80]):
     img = pipe(prompt=prompt, ip_adapter_image=ref_sq,
-               num_inference_steps=24, guidance_scale=6.0,
+               num_inference_steps=35, guidance_scale=7.5,  # adjusted per LLM-judge config review
                generator=torch.Generator(device='cuda').manual_seed(i)).images[0]
     p = EXPANDED / f"{i:03d}.png"
     img.save(p)
@@ -195,14 +195,14 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
     torch_dtype=torch.float16).to("cuda")
 pipe.load_ip_adapter("h94/IP-Adapter", subfolder="sdxl_models",
                      weight_name="ip-adapter-plus_sdxl_vit-h.safetensors")
-pipe.set_ip_adapter_scale(0.85)
+pipe.set_ip_adapter_scale(0.55)  # adjusted from 0.85 per LLM-as-Judge config review
 pipe.enable_attention_slicing()
 
 samples = []
 for i, p in enumerate(POSES):
     img = pipe(prompt=f"{base_prompt}, {p}",
-               ip_adapter_image=ref_sq, num_inference_steps=24,
-               guidance_scale=6.0,
+               ip_adapter_image=ref_sq, num_inference_steps=35,
+               guidance_scale=7.5,  # tuned per LLM-as-Judge review
                generator=torch.Generator(device='cuda').manual_seed(i)).images[0]
     out = OUT / f"ipadapter_{i:02d}.png"
     img.save(out); samples.append(str(out))

@@ -120,10 +120,30 @@ Estimated runtime once GPU is free: **3-4 hours** for both runs at 5 sec each.
 
 | Risk | Probability | Mitigation |
 |---|---|---|
-| Wan 2.2 5B installation fails on ARM (unknown wheels) | 30 % | Try minimal install first, fall back to Flux + open-source video model |
+| Wan 2.2 base deps install fails on ARM | **0 %** — tested tonight, all installs OK | n/a |
+| `decord` (Wan's video reader) missing on ARM | **100 %** — confirmed tonight | source build from `dmlc/decord` GitHub (CMake), or replace `VideoReader` calls with `imageio[ffmpeg]` (~50 LoC patch) |
 | Wan 2.2 Animate-14B preprocessor fails on anime input | 40 % | The internal preprocessor may use detectors trained on real photos |
 | Output identity drifts severely | 30 % | Train a Character LoRA anyway despite model card warning, for I2V variant only |
 | 80 GB requirement for 14B is a hard ceiling | 100 % | Run 5B variant; 14B Animate at 23-50 GB is workable |
+
+### Wan 2.2 ARM install findings (tested tonight)
+
+I cloned `Wan-Video/Wan2.2` and attempted install. Concrete data:
+
+| Component | Status |
+|---|---|
+| `flash_attn` | ✅ already present (NGC 2.7.4) |
+| `transformers ≥4.49,≤4.51.3` | ✅ pinned to 4.51.3 — installs clean |
+| `diffusers ≥0.31` | ✅ |
+| `tokenizers`, `accelerate`, `tqdm`, `imageio[ffmpeg]`, `easydict`, `ftfy`, `dashscope`, `imageio-ffmpeg` | ✅ all install |
+| `numpy<2` | ⚠️ container has numpy 2.4.3 from NGC; not strictly enforced — works in practice |
+| **`decord`** | ❌ **no Linux ARM wheel for cp312** (or any modern cp version). v0.2.0 has cp35-37 only. v0.6.0 only x86. **This is the only ARM blocker.** |
+
+`decord` is imported at module load time in `wan/__init__.py` (via `speech2video.py` and `animate.py`). Patching out speech2video helps — but **animate.py also uses decord**, so the headline `Wan 2.2 Animate` use case **needs decord working**.
+
+**Resolution path for next session**:
+1. Build decord from source on ARM: `git clone --recursive https://github.com/dmlc/decord && cd decord && mkdir build && cd build && cmake -DUSE_CUDA=ON .. && make -j` — ~20 minutes.
+2. OR replace `decord.VideoReader` with `imageio.v3.imopen(...)` in `wan/animate.py` (1-2 hours engineering).
 
 ## Why HunyuanVideo (E-12) was deprioritized
 

@@ -1,0 +1,63 @@
+{
+  "ipadapter_high_fidelity": {
+    "identity_match": 9,
+    "outfit_match": 8,
+    "hair_match": 10,
+    "color_palette_match": 9,
+    "pose_appropriateness": 7,
+    "overall_score": 8,
+    "discrepancies": [
+      "Candidate describes 'blue dress' without specifying 'Lolita-style' or 'sky-blue', which differs from the reference's specific dress style and shade.",
+      "Candidate mentions 'white socks' but omits 'knee-high', reducing accuracy.",
+      "Candidate uses 'full body' and 'neutral pose' instead of 'front-facing standing portrait', altering composition and intent.",
+      "Candidate uses 'blue bow' instead of 'large blue ribbon tied on top of head', which is less precise in detail and placement."
+    ],
+    "verdict": "drift"
+  },
+  "ipadapter_drift_outfit": {
+    "identity_match": 4,
+    "outfit_match": 2,
+    "hair_match": 10,
+    "color_palette_match": 3,
+    "pose_appropriateness": 2,
+    "overall_score": 3,
+    "discrepancies": [
+      "Outfit: Reference has sky-blue Lolita-style dress with white lace trim; candidate has dark navy gothic dress with red lace trim.",
+      "Socks: Reference has white knee-high socks; candidate has black thigh-high socks.",
+      "Shoes: Reference has blue Mary Jane shoes with strap; candidate has black boots.",
+      "Color palette: Reference uses sky-blue, white, and gray; candidate uses dark navy, red, black, and dark background, creating a stark contrast in tone and mood.",
+      "Pose: Reference is front-facing standing portrait; candidate is in a dynamic pose.",
+      "Background: Reference has plain gray background; candidate has dark background."
+    ],
+    "verdict": "drift"
+  },
+  "ipadapter_drift_identity": {
+    "identity_match": 0,
+    "outfit_match": 0,
+    "hair_match": 0,
+    "color_palette_match": 0,
+    "pose_appropriateness": 0,
+    "overall_score": 0,
+    "discrepancies": [
+      "Hair: Reference has blonde short hair (chin-length); candidate has brown wavy long hair.",
+      "Head accessory: Reference has a large blue ribbon tied on top of head; candidate has no ribbon.",
+      "Outfit: Reference has a sky-blue Lolita-style dress with white lace trim; candidate has a blue mini skirt with a white shirt.",
+      "Footwear: Reference has blue Mary Jane shoes with strap; candidate has white sneakers.",
+      "Skin tone: Reference has pale skin; candidate has tan skin.",
+      "Eyes: Reference has very large sky-blue eyes; candidate has brown eyes.",
+      "Background: Reference has a plain gray background; candidate is in an outdoor garden scene.",
+      "Pose: Reference is front-facing standing portrait; candidate is walking."
+    ],
+    "verdict": "fail"
+  },
+  "e00_config_review": {
+    "raw": "```json\n{\n  \"issues\": [\n    {\n      \"severity\": \"high\",\n      \"field\": \"ip_adapter_scale\",\n      \"comment\": \"An IP-Adapter scale of 0.85 is excessively high for a single-reference generation pipeline. This risks overfitting to the reference image, causing identity drift and loss of prompt control. Recommended range is 0.3-0.6 for stable reference alignment.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"field\": \"num_inference_steps\",\n      \"comment\": \"24 steps are insufficient for SDXL with IP-Adapter, especially when generating 80 candidates with high fidelity. This may result in noisy, underdeveloped outputs. Minimum recommended: 30-40 steps for clean, detailed anime-style generation.\"\n    },\n    {\n      \"severity\": \"high\",\n      \"field\": \"guidance_scale\",\n      \"comment\": \"A guidance scale of 6.0 is too low for SDXL when using IP-Adapter and high-quality prompts. This may lead to weak adherence to the prompt and poor detail. For training data, a range of 7.0–8.5 is recommended to ensure strong semantic fidelity.\"\n    },\n    {\n      \"severity\": \"med\",\n      \"field\": \"n_candidates\",\n      \"comment\": \"Generating 80 candidates per reference is computationally expensive and may yield diminishing returns. Consider reducing to 30–50 with post-filtering to improve efficiency and data quality.\"\n    },\n    {\n      \"severity\": \"med\",\n      \"field\": \"filter_step\",\n      \"comment\": \"Using CLIP-I (ViT-bigG-14) for filtering is overkill and slow. For anime-style generation, a faster, more relevant model like CLIP-ViT-L/14 or a domain-specific classifier would be more efficient and appropriate.\"\n    },\n    {\n      \"severity\": \"low\",\n      \"field\": \"prompt_template\",\n      \"comment\": \"The prompt includes redundant descriptors like 'masterpiece, best quality' which may bias the model toward over-optimization. Consider removing or reducing emphasis for more natural variation.\"\n    }\n  ],\n  \"suggestions\": [\n    \"Reduce ip_adapter_scale to 0.5–0.6 for balanced reference alignment without overfitting.\",\n    \"Increase num_inference_steps to 35–40 for higher-quality, cleaner outputs.\",\n    \"Raise guidance_scale to 7.",
+    "parse_error": true
+  },
+  "ac5_independent_review": {
+    "verdict": "modify",
+    "reasoning": "AC-5 claims animation is an open problem with weak open-source solutions in 2026, but the evidence shows emerging viable pathways. Wan 2.2 Animate-14B demonstrates a single-model solution for animated character video with manageable GPU requirements (23–50 GB), and Hunyuan3D 2.5 introduces integrated rigging support. While current tools like DWpose/OpenPose fail on anime due to distribution mismatch, and UniRig demands excessive VRAM, these are not insurmountable barriers. The existence of a working pipeline (Wan 2.2 + Mixamo retargeting + 3D→2D projection) suggests that 'rigged 3D' can be achieved via hybrid approaches. Thus, the constraint is overly pessimistic and misrepresents the current state. However, it should not be dropped entirely, as the core challenge of reliable, efficient, and open-source rigged 3D animation for anime remains non-trivial. The constraint should be refined to reflect this nuance.",
+    "proposed_modification": "AC-5: 'Rigged 3D animation for anime characters remains challenging to achieve with open-source tools that are both efficient and scalable; however, hybrid approaches combining AI-driven motion generation (e.g., Wan 2.2 Animate-14B) with retargeting (e.g., Mixamo) and lightweight rigging pipelines show promise and should be prioritized.'",
+    "confidence": 0.92
+  }
+}

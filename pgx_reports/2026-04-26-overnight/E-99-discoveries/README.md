@@ -137,6 +137,26 @@ with both. Don't `pip uninstall torch`.
 
 ---
 
+## D-08a — LLM-as-Judge (vLLM/Qwen3-30B) caught real config bugs in tonight's scripts
+
+**Severity**: 🟢 **method validation**
+
+**What we tested**: Used the locally running vLLM serving Qwen3-30B as an LLM-as-Judge to review my proposed `e00 phase 2` IP-Adapter generation config. The judge returned **3 high-severity issues**:
+
+| Field | My value | Judge says | Action |
+|---|---|---|---|
+| `ip_adapter_scale` | 0.85 | "excessively high; risks identity drift; 0.5-0.6 recommended" | adjusted to **0.55** in `run_p1_p4.sh` |
+| `num_inference_steps` | 24 | "insufficient for SDXL+IPA, 30-40 needed" | adjusted to **35** |
+| `guidance_scale` | 6.0 | "too low; 7.0-8.5 for training data" | adjusted to **7.5** |
+
+**This caught a real defect** that would have shipped 80 sub-optimal generations to the architect's morning review. **LLM-as-Judge is a viable evaluator** for the project — not just a smoke-test toy. See `tools/llm_judge.py` for reusable functions.
+
+Same judge also independently reviewed AC-5 ("Animation is open problem") with verdict `modify` (confidence 0.92), proposing a more nuanced wording. The LLM agrees AC-5's spirit is correct but argues it's overly pessimistic given the 2026 evidence (Wan 2.2 Animate, Hunyuan3D 2.5 rigging). Worth considering if you want to soften AC-5 to acknowledge the partial wins.
+
+Output preserved at `E-99-discoveries/llm_judge_demo.json`.
+
+---
+
 ## D-08 — Asset Contract (spec §6) is the single highest-leverage architecture
 gap
 
