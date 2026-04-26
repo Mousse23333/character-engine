@@ -1,0 +1,51 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Conda
+*.conda
+
+# AI / model artifacts (track via Git LFS or external storage if needed)
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.bin
+*.gguf
+
+# 3D / DCC
+*.blend1
+*.fbx.import
+*.tmp
+
+# Large media (track via Git LFS if needed)
+*.mp4
+*.mov
+*.webm
+*.mkv
+
+# PGX reports may contain large artifacts — keep summaries, gitignore samples/
+pgx_reports/**/samples/
+pgx_reports/**/logs/
+pgx_reports/**/raw_outputs/
+
+# Common build / cache
+node_modules/
+dist/
+build/
+*.log
