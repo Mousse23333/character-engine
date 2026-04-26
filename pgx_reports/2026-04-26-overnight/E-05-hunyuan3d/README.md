@@ -1,13 +1,31 @@
 # E-05 — Hunyuan3D 2.x Image-to-Mesh
 
-**Status**: ⛔ **Not run tonight** — VRAM blocker + ARM compile risk.
+**Status**: ⚠️ **Inference not run** (VRAM blocker), **but the dominant ARM compile risk is RESOLVED tonight.**
 **Architect's question**: **Q4** — does Hunyuan3D anime mesh enter animation pipeline?
 
-## The single risk that dominates this experiment
+## Major positive finding (tested tonight)
 
-**Hunyuan3D 2.x ships two custom CUDA ops** (`custom_rasterizer` and `differentiable_renderer`) that need source compilation. **They have never been validated on aarch64+CUDA13** in publicly documented form. The most likely failure mode of E-05 isn't a quality issue — it's that the build step fails and we can't even get to the inference.
+**Both Hunyuan3D 2.0 custom CUDA / C++ ops compiled and imported successfully on this ARM64 + GB10 hardware.** This was the single biggest unknown for E-05.
 
-Alpha-mitigation in the run script: graceful fallback to **shape-only generation** if texture build fails, so we still produce a riggable mesh.
+| Op | Type | Compile result | Import result |
+|---|---|---|---|
+| `custom_rasterizer_kernel` | CUDA `.so` (sm_120) | ✅ built clean (only style warnings) | ✅ `import custom_rasterizer_kernel` works |
+| `mesh_processor` | C++ `.so` (pybind11) | ✅ built clean | ✅ `import mesh_processor` works |
+
+CUDA toolkit: 13.1, target arch `compute_120` (GB10's compute capability), torch 2.10/2.11. Build commands:
+
+```bash
+cd Hunyuan3D-2/hy3dgen/texgen/custom_rasterizer
+TORCH_CUDA_ARCH_LIST="12.0" python setup.py install
+cd ../differentiable_renderer
+python setup.py install
+```
+
+Both built in under 1 minute. **Hunyuan3D 2.0 is install-ready on GB10/ARM64.** The texture-pipeline shape-only fallback is no longer needed.
+
+Hunyuan3D 2.0 model weights (`tencent/Hunyuan3D-2`) are also already cached locally (~5 GB).
+
+**This finding alone changes E-05's outlook** from "high ARM compile risk, fall back to shape-only" to "ready to run E-05 inference the moment VRAM is freed".
 
 ## What's downloaded already (background download)
 

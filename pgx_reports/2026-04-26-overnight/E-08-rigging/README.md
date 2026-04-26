@@ -32,12 +32,33 @@
 | Skinning VRAM | **≥ 60 GB single-GPU** even with batch=2 | repo README |
 | Python | 3.11 (specific) | requirements.txt |
 | Torch | ≥ 2.1.1 | requirements.txt |
-| Hard deps | `spconv`, `torch_scatter`, `torch_cluster`, `flash_attn` | requirements.txt |
-| ARM64 status | **Not mentioned anywhere** | repo |
+| Hard deps | `spconv`, `torch_scatter`, `torch_cluster`, `flash_attn`, `bpy==4.2`, `open3d` | requirements.txt + grep |
+| ARM64 status | **Hard-blocked on multiple deps** (tested tonight) | this report |
 | Known install pain | "high chance that you will encounter flash_attn installation error" | README |
 | Released ckpts | Articulation-XL2.0 (skeleton + skinning) | HF |
 | **In-prep ckpts** | **Rig-XL / VRoid** (the paper's main results) | README |
 | Anime support | Yes ("detailed anime characters" in supported categories) | README |
+
+### UniRig install on this ARM64 box — empirical results
+
+I tried installing UniRig tonight and got concrete data:
+
+| Dependency | Status on aarch64 + py3.12 | Workaround |
+|---|---|---|
+| `bpy==4.2` | ❌ **no Linux ARM wheel** (only macOS arm64 + Linux x86_64) | replace bpy mesh I/O with `trimesh` (~1-2 days work) |
+| `open3d` | ❌ **no Linux ARM wheel** for any cp version | similarly, use `trimesh` for I/O |
+| `spconv-cu120` | ❌ no cp312 wheel; no aarch64 wheel for any cp | source build (multi-hour) |
+| `torch_scatter` | ⚠️ source build attempted, in progress (~5-10 min compile) | possible from-source |
+| `flash_attn` | ✅ already present (NGC container 2.7.4) | no action needed |
+| `transformers==4.51.3` | ✅ pip-installable; downgrades from 5.6.2 | OK |
+| `pytorch_lightning`, `lightning`, `timm`, `omegaconf`, `trimesh`, `pyrender`, `wandb`, `huggingface_hub`, `addict`, `python-box`, `einops`, `fast-simplification` | ✅ install fine | none |
+
+**Bottom line**: UniRig is **not install-clean on this specific ARM64 container**. It needs:
+- A bpy + open3d → trimesh translation layer (~1-2 days dev)
+- spconv compiled from source (no public ARM wheel)
+- The model code itself (`src/model/PTv3Object.py` etc.) **does load** without bpy/open3d, so the deep-net runs once you bypass the I/O layer.
+
+**This is a firmer, more useful answer than "no ARM mention in docs"**: it's a precise list of what to fix to get UniRig running on aarch64. **Estimated 1 week of focused engineering** to make a clean ARM port.
 
 **Why this matters**: VRoid (Pixiv's anime VRM character library) is the closest training distribution to our Alice character. The Rig-XL/VRoid checkpoint is **what we actually want**, but it's not released yet. Articulation-XL is from a much broader (and lower-quality-anime) distribution.
 
