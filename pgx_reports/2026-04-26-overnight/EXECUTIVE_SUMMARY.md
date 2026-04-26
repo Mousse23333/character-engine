@@ -36,7 +36,7 @@ These are corrections to the input documents, not output of experiments. Please 
 | ① **Style LoRA** | ✅ working | SDXL/Illustrious + Kohya. Mature. |
 | ② **Identity (LoRA)** | ✅ working | Same as ①. |
 | ② **Identity (zero-train)** | ✅ working | IP-Adapter Plus + PuLID. Both Apache-2.0. |
-| ③ **Mesh (Hunyuan3D 2.x)** | ⚠️ **ARM compile risk** | `custom_rasterizer` + `differentiable_renderer` need source build; no ARM precedent. |
+| ③ **Mesh (Hunyuan3D 2.x)** | ✅ **ARM compile RESOLVED tonight** | Both `custom_rasterizer` and `differentiable_renderer` built and imported on GB10/aarch64 (sm_120). Model weights cached. **Ready to inference when GPU frees.** |
 | ④ **Rig** | ❌ **engineering-incomplete** | UniRig: needs 60 GB skinning, anime checkpoint **not yet released**. Hunyuan3D 2.5 has integrated rigging (untested). |
 | ⑤ **Equipment** | (not tested) | Tractable once Asset Contract is designed. |
 | ⑥ **State Modulator** | (not tested) | Same. |
@@ -47,18 +47,19 @@ These are corrections to the input documents, not output of experiments. Please 
 
 ---
 
-## 2. The three biggest surprises
+## 2. The four biggest surprises
 
 1. **`Wan 2.2 Animate-14B` exists** and is exactly the product line ⑦ shape, single-model. The architecture spec didn't mention it. Single ref image + driving video → animated character video, Apache-2.0, ~23-50 GB single-GPU. **This re-shapes Production Line ⑦.** Caveat: outputs 2D video, not rigged 3D motion — see § 4.
 2. **DWpose / OpenPose return 0 keypoints on the Alice anime ref**, even after Real-ESRGAN ×4 upscaling. This is a *distribution* failure, not resolution. **This breaks the spec'd pipeline ⑦ at the perception step**, before any of the heavy generative parts even get to run.
 3. **Wan 2.2 model card explicitly discourages LoRA training** ("we do not recommend using LoRA models trained on Wan2.2"). The spec's plan to train a Character LoRA on Wan 2.2 is at odds with the model author's own guidance.
+4. **Hunyuan3D 2.0 builds and imports cleanly on aarch64 + GB10**, despite the public docs lacking ARM mention. The two custom CUDA / C++ ops (`custom_rasterizer`, `differentiable_renderer`) compiled in <1 minute targeting `sm_120`. This **unblocks Production Line ③ on this hardware** without further investigation.
 
 ---
 
 ## 3. The three biggest bottlenecks
 
 1. **Open-source rigging (UniRig) needs 60 GB single-GPU for skinning**, and the anime-specific checkpoint (Rig-XL/VRoid) is **not yet released** (Articulation-XL2.0 is the available substitute, less anime-tuned).
-2. **ARM64 (aarch64) container is silently incompatible with several key tools**: `bpy`, `Blender` static binaries (need libX11), `onnxruntime-gpu`, possibly `spconv`. The 26.01 NGC PyTorch container does include `flash_attn` and `triton` working — that's the saving grace.
+2. **ARM64 (aarch64) container is silently incompatible with several specific tools** (now precisely mapped): `bpy`, `open3d`, `decord`, `onnxruntime-gpu`, `spconv-cu120` (no cp312 wheels). The 26.01 NGC PyTorch container does include working `flash_attn` and `triton` — that's the saving grace. **Hunyuan3D 2.0 custom CUDA ops compile clean on ARM** (tested). **`torch_scatter` builds from source on ARM** (tested). **The remaining blockers are precise and patchable** — see ENVIRONMENT.md for the full audit and `E-08`, `E-11` for tool-specific install-state findings.
 3. **Asset Contract is undefined.** This is the highest-leverage architecture gap. Without it, all 7 production lines need bespoke wiring to the online side. The spec's §6 calls this out — but it's unblocked from the AI side; this is a 2-3 day human design task.
 
 ---
@@ -113,6 +114,22 @@ The whole shape of Production Line ⑦ depends on this. If 2D video is allowed: 
 **Best 5-minute path**: this file → `ARCHITECT_DECISIONS.md`.
 
 **Best 30-minute path**: + `E-13-video-to-rigged/README.md` (DWpose anime failure) + `E-08-rigging/README.md` (rigging red flag) + `E-11-wan22-video/README.md` (Wan 2.2 Animate finding).
+
+---
+
+## 7. Bonus finding (post-initial-report)
+
+The vLLM-as-Judge approach turned out to be **a real research tool, not a smoke test**. Using the locally-running Qwen3-30B endpoint, I had it review the IP-Adapter generation config in `run_p1_p4.sh` — and it caught **3 high-severity bugs** that would have produced sub-optimal training data:
+
+- `ip_adapter_scale = 0.85` (too high; risks overfit) → corrected to 0.55
+- `num_inference_steps = 24` (too low for SDXL+IPA) → corrected to 35
+- `guidance_scale = 6.0` (too low for training data) → corrected to 7.5
+
+I've already applied these corrections to `tools/run_p1_p4.sh`. **Without LLM-as-Judge, the next session would have generated 80 sub-quality candidates before noticing.**
+
+The same judge also independently reviewed AC-5 (verdict: `modify`, confidence 0.92), proposing a more nuanced wording. See `E-99-discoveries/llm_judge_demo.json` for the raw output.
+
+**The architectural implication**: vLLM-as-Judge **is a viable tool for the project's "auto-evaluation" needs** (per spec §4.1). It's already running, it's already paid-for, and it produces useful structured output. Build the project's evaluator on top of it, not on top of GPT-4 or Claude API.
 
 ---
 

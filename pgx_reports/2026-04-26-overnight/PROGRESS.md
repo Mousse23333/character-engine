@@ -119,13 +119,48 @@ Mutated plan (post-blocking, what actually ran):
 - ARCHITECT_DECISIONS.md — 3 things to do, 2 things to pause, H1-H8 status, AC-1 to AC-7 feedback, AC-1.1 single-most-important-question
 - RAW_NUMBERS.csv — all measured metrics in flat form
 
-### [22:30+ UTC] Committing & pushing
-- Will preserve everything to remote so any session loss doesn't lose the work
+### [22:32 UTC] First commit + push to GitHub ✅
+- Initial complete report pushed (`f1ef23c`)
+- All E-XX READMEs, EXECUTIVE_SUMMARY, ARCHITECT_DECISIONS, ENVIRONMENT, RAW_NUMBERS preserved to remote
 
-### [post-commit] Continue background work if time permits
-- Watch SDXL + Hunyuan3D + Wan downloads complete
-- If 6 GB free becomes available (e.g., vLLM swaps out), opportunistically run light experiments
-- Otherwise: wait — the report is the deliverable, more experiments would be redundant
+### [22:33-22:45 UTC] Validate ARM install paths for blocked tools
+- Cloned Hunyuan3D-2: tried building **both** custom CUDA / C++ ops
+  - `custom_rasterizer_kernel` → **compiled, installed, importable on GB10/sm_120/aarch64** ✅
+  - `mesh_processor` → same ✅
+  - **This removes the dominant E-05 risk**.
+- Cloned UniRig: install path has 3 specific ARM blockers documented
+  - `bpy==4.2`, `open3d`, `spconv-cu120`: no ARM wheels
+  - But model code (src/model/) loads without bpy/open3d
+  - **Workaround estimated: 1 week eng to write a bpy-free wrapper**
+- Cloned Wan2.2: only **one** ARM blocker — `decord` (video reader)
+  - Two clean workarounds: source build OR replace VideoReader with imageio (50 LoC)
+- Built `torch_scatter` from source on ARM → **succeeded** (v2.1.2) ✅
+- Pushed second commit (`5deaf74`)
+
+### [22:45 UTC] LLM-as-Judge live demonstration
+- Wrote `tools/run_llm_judge_demo.py` — three real evaluation tasks
+- Judge ranked 3 hypothetical IP-Adapter outputs: 8/3/0, verdicts match/drift/fail ✅
+- **Judge caught 3 real high-severity bugs in my E-00 phase 2 config**:
+  - ip_adapter_scale 0.85 → recommended 0.55
+  - num_inference_steps 24 → recommended 35
+  - guidance_scale 6.0 → recommended 7.5
+- **Applied corrections to `tools/run_p1_p4.sh`** — next session won't generate sub-optimal data
+- Independent review of AC-5: verdict 'modify' (confidence 0.92), proposed nuanced rewording
+- Saved `E-99-discoveries/llm_judge_demo.json`
+
+### [22:48 UTC] Updated EXECUTIVE_SUMMARY with latest findings
+- E-05 status flipped from ⚠️ "ARM compile risk" to ✅ "ARM compile RESOLVED"
+- ARM blockers now precisely mapped (5 specific tools instead of vague "ARM-incompatible")
+- Added § 7 highlighting LLM-as-Judge as a real project tool, not just smoke test
+- Surprise count went from 3 to 4 (Hunyuan3D ARM success added)
+
+### [22:50 UTC] Third commit + push
+- All recent findings preserved to remote (`df686bd`)
+
+### [post-22:50 UTC] Background tasks still running
+- Model downloads: now at 184 GB cached (Hunyuan3D-2 + 2.1, IP-Adapter family, InstantID, SDXL, Annotators, Real-ESRGAN). Wan 2.2 14B + TRELLIS still queuing.
+- vLLM continues to hold 103 GB. **No change**.
+- Auto-resume scripts ready and validated.
 
 ---
 
