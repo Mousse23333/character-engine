@@ -1,2 +1,0 @@
-return=1, time=7.2s
-See logs/run.log
