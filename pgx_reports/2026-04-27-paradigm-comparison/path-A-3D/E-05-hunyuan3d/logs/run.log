@@ -1,0 +1,15 @@
+loaded shape: V=209,131 F=418,300
+Fetching 13 files:   0%|          | 0/13 [00:00<?, ?it/s]Fetching 13 files: 100%|██████████| 13/13 [00:00<00:00, 276781.48it/s]
+Fetching 20 files:   0%|          | 0/20 [00:00<?, ?it/s]Fetching 20 files: 100%|██████████| 20/20 [00:00<00:00, 13216.65it/s]
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  67%|██████▋   | 4/6 [00:01<00:00,  3.51it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:01<00:00,  4.85it/s]
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]An error occurred while trying to fetch /home/daniel/.cache/huggingface/hub/models--tencent--Hunyuan3D-2/snapshots/9cd649ba6913f7a852e3286bad86bfa9a2d83dcf/hunyuan3d-paint-v2-0-turbo/vae: Error no file named diffusion_pytorch_model.safetensors found in directory /home/daniel/.cache/huggingface/hub/models--tencent--Hunyuan3D-2/snapshots/9cd649ba6913f7a852e3286bad86bfa9a2d83dcf/hunyuan3d-paint-v2-0-turbo/vae.
+Defaulting to unsafe serialization. Pass `allow_pickle=False` to raise an error instead.
+Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:01,  3.54it/s]Loading pipeline components...:  67%|██████▋   | 4/6 [00:08<00:04,  2.33s/it]Loading pipeline components...:  83%|████████▎ | 5/6 [00:09<00:01,  1.83s/it]Loading pipeline components...: 100%|██████████| 6/6 [00:09<00:00,  1.55s/it]
+/home/daniel/.cache/huggingface/modules/diffusers_modules/local/pipeline.py:598: UserWarning: torch.range is deprecated and will be removed in a future release because its behavior is inconsistent with Python's range builtin. Instead, use torch.arange, which produces values in [start, end).
+  index = torch.range(29, 0, -bsz, device='cuda').long()
+The first timestep on the custom timestep schedule is 989, not `self.config.num_train_timesteps - 1`: 999. You may get unexpected results when using this timestep schedule.
+The custom timestep schedule contains the following timesteps which are not on the original training/distillation timestep schedule: [tensor(890), tensor(791), tensor(692), tensor(593), tensor(494), tensor(395), tensor(296), tensor(197), tensor(98)]. You may get unexpected results when using this timestep schedule.
+paint pipeline loaded: 16.1s, GPU=7.15GB
+texture inference: 198.1s, GPU peak=10.45GB
+saved → 03_alice_textured.glb
+final mesh: V=327,022 F=418,300

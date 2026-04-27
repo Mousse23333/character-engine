@@ -1,0 +1,6 @@
+setup.py
+decord/__init__.py
+decord.egg-info/PKG-INFO
+decord.egg-info/SOURCES.txt
+decord.egg-info/dependency_links.txt
+decord.egg-info/top_level.txt

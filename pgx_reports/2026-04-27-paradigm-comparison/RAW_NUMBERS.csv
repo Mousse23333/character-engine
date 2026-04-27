@@ -1,0 +1,8 @@
+E-07,retop_actual_faces,49999,count,1,target=50000 (trimesh quadric),2026-04-27T08:34:06Z
+E-07,retop_time,0.34101104736328125,seconds,1,target=50000 faces,2026-04-27T08:34:06Z
+E-07,retop_actual_faces,20000,count,1,target=20000 (trimesh quadric),2026-04-27T08:34:06Z
+E-07,retop_time,0.3509948253631592,seconds,1,target=20000 faces,2026-04-27T08:34:06Z
+E-07,retop_actual_faces,19600,count,1,target=8000 (trimesh quadric),2026-04-27T08:34:06Z
+E-07,retop_time,0.5232243537902832,seconds,1,target=8000 faces,2026-04-27T08:34:06Z
+E-07,retop_actual_faces,19600,count,1,target=5000 (trimesh quadric),2026-04-27T08:34:06Z
+E-07,retop_time,0.523810863494873,seconds,1,target=5000 faces,2026-04-27T08:34:06Z
