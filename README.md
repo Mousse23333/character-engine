@@ -18,10 +18,11 @@ composition handle real-time consumption (the online world).
 
 | Path | Purpose |
 |------|---------|
-| [`PIPELINE_ARCHITECTURE_SPEC.md`](./PIPELINE_ARCHITECTURE_SPEC.md) | Architecture record: paradigm, 7 invariants (AC-1..7), offline/online separation, hybrid route |
-| [`PGX_OVERNIGHT_CAPABILITY_SURVEY.md`](./PGX_OVERNIGHT_CAPABILITY_SURVEY.md) | Overnight task brief for the PGX-station AI assistant — capability survey of 2026-04 open-source AI across the full character production stack |
+| [`PIPELINE_ARCHITECTURE_SPEC.md`](./PIPELINE_ARCHITECTURE_SPEC.md) | Architecture record: paradigm, invariants (AC-0..7), offline/online separation, hybrid route |
+| [`PGX_OVERNIGHT_CAPABILITY_SURVEY.md`](./PGX_OVERNIGHT_CAPABILITY_SURVEY.md) | Overnight task brief #1 — broad capability survey |
+| [`PGX_TASK_ADDENDUM_001.md`](./PGX_TASK_ADDENDUM_001.md) ⭐ | **CURRENT TASK** — parallel evaluation of 2D vs 3D paradigms (AC-0 introduced) |
 | [`test_assets/`](./test_assets/) | Reference materials (test character image, etc.) |
-| `pgx_reports/` | Created by PGX AI — overnight survey results land here |
+| `pgx_reports/` | Created by PGX AI — survey results land here |
 
 ---
 
