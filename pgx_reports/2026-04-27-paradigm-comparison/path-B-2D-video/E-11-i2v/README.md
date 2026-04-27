@@ -1,7 +1,9 @@
 # E-11-I2V — Wan 2.2 I2V-A14B on Alice (path B substitute for Animate)
 
-**Status**: 🟡 **Inference in progress at writing — partial metrics below**
+**Status**: ✅ **End-to-end SUCCESS on aarch64 + GB10**
 **Date**: 2026-04-27
+**Total wall time**: 23.2 min (model load 2 min + sampling 20.5 min + save 3 s)
+**Output**: `samples/alice_i2v.mp4` 1.38 MB, 33 frames @ 16 fps (~2.06 s video), 736×528
 
 ## Why I2V (and not Animate-14B as the architect prioritized)
 
@@ -24,27 +26,48 @@ The architect's #1 priority is end-to-end Path B confirmation. Animate-14B has a
 | Convert dtype | True |
 | Backbone params | 14B per expert; bf16 |
 
-## Live metrics (filling in real-time)
+## Final metrics
 
-| Stage | Time | GPU peak | Notes |
-|---|---|---|---|
-| Pipeline create | 54 s | — | Pre-loading |
-| T5 load | ~10 s | — | onto CPU |
-| VAE load | ~1 s | — | |
-| WanModel build (incl. high+low noise weights) | ~55 s | (loading) | |
-| **Total load** | **~120 s** | (memory peaks during load) | |
-| Step 1 | 54 s | — | first step always slowest |
-| Steps 2-N | ~30 s/step | — | settled |
-| Inference (40 steps) | ~25 min ETA | — | _filling_ |
-| Save MP4 | _pending_ | | |
+| Stage | Time | Notes |
+|---|---|---|
+| Pipeline create + T5 load (CPU) + VAE load | ~55 s | |
+| WanModel build (high + low noise experts loaded) | ~55 s | |
+| **Total model load** | **~120 s (2 min)** | Memory peaks ~93 GB during load |
+| First inference step | 54 s | First-step warmup |
+| Steps 2-15 (high-noise expert) | 27-29 s/step | Settled, healthy |
+| Step 16 (high → low expert SWAP) | **~165 s** | Offload swap — memory shuffle |
+| Steps 17-40 (low-noise expert) | 26-30 s/step | Recovered after swap |
+| **Total sampling (40 steps)** | **20:28 min** (1228 s) | wall-clock |
+| Save MP4 | 3 s | |
+| **Total end-to-end** | **23.2 min** (1391 s) | from process start to file written |
 
-**Live progress** (last sampled): step 5 / 40 at +2:44, est total ~17:28 remaining at 30 s/step.
+### Quality (CLIP-I via ViT-bigG-14, 8 evenly-sampled frames vs original Alice ref)
 
-## Architecturally relevant findings (already)
+| Metric | Value | Interpretation |
+|---|---|---|
+| **CLIP-I to ref (per-frame mean)** | **0.954** | excellent identity preservation |
+| CLIP-I to ref (std) | 0.011 | very low variance — character is **stable** across frames |
+| CLIP-I to ref (min frame) | 0.940 | even worst frame still strong match |
+| **Cross-frame CLIP-I (mean off-diagonal)** | **0.976** | character extremely consistent within clip |
+| Cross-frame CLIP-I (min pair) | 0.945 | least-similar two frames still tightly clustered |
 
-1. **Wan 2.2 14B I2V loads and runs on aarch64 + CUDA 13.1** — every dependency that was a question yesterday (flash_attn, triton, decord shim) actually held up.
-2. **Memory headroom is workable**: 119 GB unified, model + cache + intermediates fit.
-3. **Per-step inference cost ~30 s at 832×480** is the real number you need for "how long does 1 second of generated video cost on this hardware?". For 33 frames: 30 × 40 ≈ 20 min wall. That's roughly **10 minutes per second of generated video** at this resolution — informs the AC-3 cost analysis.
+### Cost ratio (informs AC-3 cost model)
+
+| Output (832×480 → 736×528) | Cost |
+|---|---|
+| Frames generated | 33 |
+| Wall time | 23.2 min |
+| **Per second of generated video** | **~11 min generation** |
+| **Per frame** | **~42 s** |
+| **VRAM peak** | ~93 GB during load, swaps to ~50 GB during inference |
+
+## Architecturally relevant findings (confirmed by this run)
+
+1. **Wan 2.2 14B I2V loads and runs on aarch64 + CUDA 13.1** ✅ — every dependency that was a question yesterday (flash_attn, triton, decord shim) actually held up.
+2. **Memory headroom is workable**: 119 GB unified is enough for 14B MoE with offload between experts. Peak load 93 GB, settles to ~50 GB during inference.
+3. **Per-second-of-video cost ~11 min** on this hardware at 832×480. For batch / offline pipelines, this is workable. For real-time — not even close. **AC-3 (sandbox + state explosion) requires aggressive caching** if Path B is used for animation.
+4. **Identity preservation is excellent**: 0.954 CLIP-I to ref. The "character drift" concern from yesterday's analysis didn't materialize for I2V on a 2-second clip.
+5. **The high→low expert swap at boundary timestep (step 16) is a one-time ~165 s penalty** — informs scheduling (don't run multiple Wan jobs interleaved if you can avoid the swap).
 
 ## Files
 
