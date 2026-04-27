@@ -9,11 +9,59 @@
 
 ## TL;DR (5-minute read)
 
-**Both paths run on this hardware**, with different success rates at different steps. The architect's question "which paradigm should AC-0 collapse to" has a **provisional answer** based on these measurements:
+**Both paths run on this hardware** with different success rates at different steps. After running both, my recommendation is **Path C — Hybrid 2D+3D**:
 
-> **Path B (2D video) gets to a usable demo faster on a single ARM/aarch64 box, but Path A (3D) is more architecturally tractable for the project's stated AC-3 (sandbox equipment + state) requirement.**
->
-> Recommend: **AC-0 stays open**, but **AC-1.1 = "Animation assets are 2D video at MVP, with deferred path to 3D rigged once ARM-Blender or x86 worker is available"**.
+> **Identity Asset = 3D mesh + texture (Path A's strength).**
+> **Animation Asset = 2D video clip conditioned on a 3D-rendered reference image (Path B's strength).**
+> **The 3D→2D bridge becomes the architectural glue.**
+
+Why hybrid wins on data:
+- Path A's mesh+texture works in 263s, 10GB peak — solid, repeatable
+- Path A's rigging is **engineering-blocked on aarch64** (UniRig deps), recoverable on x86
+- Path B's I2V/Animate works (today, on this hardware) but **scales poorly for AC-3** (each equipment×state combo = fresh inference, ~10 min/sec at 832×480)
+- The architecture's AC-3 (sandbox + state explosion) **requires deterministic composition** for caching — natural in Path A, impossible in pure Path B
+- Hybrid takes the rigging work off the critical path while shipping content
+
+See `ARCHITECT_DECISIONS.md` for concrete actions.
+
+```
+                  PATH C — Hybrid Architecture
+                  ═══════════════════════════════
+
+  Identity assets (immutable, versioned)
+  ┌──────────────────────────────────┐
+  │  Concept image                    │
+  │       ↓                           │
+  │  SDXL/Illustrious + IP-Adapter    │  ◄── PATH A strength
+  │  (multi-view image set)           │      (deterministic
+  │       ↓                           │       composition,
+  │  Hunyuan3D 2.0  → 3D mesh+tex     │       AC-3 caches)
+  │       ↓                           │
+  │  trimesh retop → animation-ready  │
+  │       ↓                           │
+  │  (x86 worker, deferred:           │
+  │   UniRig → rigged FBX)            │
+  └──────────────────────────────────┘
+                  │
+                  ▼
+  ┌──────────────────────────────────┐
+  │  3D scene compose:               │
+  │   identity + equipment + state   │
+  │       ↓                           │
+  │  Render to 2D ref image          │
+  │  (with NPR shader pre-pass)      │
+  └──────────────────────────────────┘
+                  │
+                  ▼
+  ┌──────────────────────────────────┐
+  │  Wan 2.2 Animate-14B             │  ◄── PATH B strength
+  │  (ref + driving clip → MP4)      │     (motion quality,
+  │       ↓                           │      single-model)
+  │  Cache key = hash(ref+drive+seed) │
+  │       ↓                           │
+  │  PIXI 2D game render             │
+  └──────────────────────────────────┘
+```
 
 ---
 
