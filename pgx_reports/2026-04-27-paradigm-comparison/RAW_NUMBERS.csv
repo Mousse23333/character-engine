@@ -33,3 +33,16 @@ E-05,n_vertices_textured,327022,count,1,after UV seams in texture pipeline,2026-
 E-05,gpu_peak_shape,5.99,GB,1,Hunyuan3D-DiT,2026-04-27T08:27:15Z
 E-05,gpu_peak_texture,10.45,GB,1,Hunyuan3D-Paint,2026-04-27T08:32:00Z
 E-05,texture_resolution,2048,pixels,1,square PBR,2026-04-27T08:32:00Z
+E-11-Animate,preprocess_time,63.8,seconds,1,CPU ONNX (no GPU on ARM),2026-04-27T09:33:29Z
+E-11-Animate,generation_time,1427.7,seconds,1,14B inference,2026-04-27T09:33:29Z
+E-11-Animate,output_size_MB,2.4,MB,1,alice + Wan example drive,2026-04-27T09:33:29Z
+E-11-Animate,frame_num,33,frames,1,~2 sec @ 16fps,2026-04-27T09:33:29Z
+E-11-Animate,frames_actual,106,count,1,video frames,2026-04-27T09:34:32Z
+E-11-Animate,preprocess_time,64,seconds,1,CPU ONNX (no GPU on ARM),2026-04-27T09:34:32Z
+E-11-Animate,generation_time,1428,seconds,1,4 windows x 20 sample steps,2026-04-27T09:34:32Z
+E-11-Animate,output_size_MB,2.39,MB,1,alice + Wan example drive,2026-04-27T09:34:32Z
+E-11-Animate,clip_i_to_ref_mean,0.8927,cosine,12,vs original alice ref,2026-04-27T09:34:32Z
+E-11-Animate,clip_i_to_ref_std,0.0247,cosine,12,frame-stability,2026-04-27T09:34:32Z
+E-11-Animate,clip_i_to_ref_min,0.8605,cosine,1,worst frame,2026-04-27T09:34:32Z
+E-11-Animate,clip_i_cross_frame_mean,0.9174,cosine,132,off-diagonal,2026-04-27T09:34:32Z
+E-11-Animate,clip_i_cross_frame_min,0.8808,cosine,1,least-similar pair,2026-04-27T09:34:32Z
