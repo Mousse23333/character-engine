@@ -157,27 +157,27 @@ Will be filled in when the inference completes. Headline metric will be: did the
 
 ---
 
-## 4. The 9-dimension scoring table
+## 4. The 9-dimension scoring table (refined with measured data)
 
-(From ADDENDUM § 2. Scores 1-5 with brief evidence. _Filled with current data; will refine when I2V finishes._)
+(From ADDENDUM § 2. Scores 1-5. **Bold** = backed by measurement, plain = inferred.)
 
 | Dimension | Path A (3D) | Path B (2D) | Path C (hybrid) |
 |---|---|---|---|
-| **目标可达性 — 沙盒 + 装备 + 状态实时合成 + 二次元品质** | **3** — 3D rigged + shader is the right shape for sandbox/equipment, but rigging is blocked | **2** — generative cost per combination kills "sandbox × state" scaling | **4** — A for static composition, B for dynamic motion |
-| **当前工程成熟度** | **2** (今晚 ARM-blocked at rigging) — would be 4 on x86 | **3-4** (I2V working on ARM, pending confirmation) | inherited |
-| **AI 模型未来 12 个月演进上限** | **3** — UniRig anime ckpt forthcoming; Hunyuan3D 2.5 rigging | **4** — Wan/Hunyuan video models scaling fast | hybrid |
-| **AC-6 开源合规度** | **3** (UniRig Apache-2.0, but Blender GPL is a side-load consideration) | **5** (Wan 2.2 Apache-2.0 throughout) | mostly **4** |
-| **GB10 (我们硬件) 实际可跑** | **3** (E-05, E-07 ✓; E-08 blocked) | **4** (I2V running; Animate WIP) | depends |
-| **新装备 / 新角色加入的工程代价** | **4** (asset-pipeline) | **2** (must regenerate) | **3** |
-| **角色 / 风格 一致性可控性** | **5** (deterministic, parametric) | **3** (generative, prompt-fragile) | **4** |
-| **从今天到 MVP 的预估工时** | ~3-6 weeks (rigging port + retarget pipeline) | ~1-2 weeks (productionize I2V/Animate) | ~2-4 weeks (scope-define hybrid first) |
-| **核心硬伤 / 红旗数量** | **3** (rigging blocked, Blender-on-ARM, anime-aware retop) | **2** (per-combination cost, character drift across clips) | **4** (双倍 plumbing) |
+| **目标可达性 — 沙盒 + 装备 + 状态实时合成 + 二次元品质** | **3** — mesh + texture work today, but rigging blocked on ARM | **2** — measured: equipment swap drops CLIP-I from 0.95 → 0.62-0.75 (fail) | **4** — 3D handles equipment combinatorics deterministically |
+| **当前工程成熟度** | **3** (E-05/E-07 measured; E-08 needs x86 worker) | **4** (I2V end-to-end **23.2 min** measured + Animate working on ARM) | **3** (depends on bridge code) |
+| **AI 模型未来 12 个月演进上限** | **3** — UniRig anime ckpt + Hunyuan3D 2.5 rigging coming | **5** — video models scaling fastest in 2026 | **4** — both inherited |
+| **AC-6 开源合规度** | **4** — Hunyuan3D Apache-2.0, UniRig Apache-2.0; Blender is GPL but separate process | **5** — Wan 2.2 Apache-2.0 end-to-end | **4** |
+| **GB10 (我们硬件) 实际可跑** | **3** — E-05+E-07 confirmed; E-08 needs x86 | **4** — I2V CLIP-I 0.954, 23 min run; Animate preprocess working too | **3-4** — needs both, but each works |
+| **新装备 / 新角色加入的工程代价** | **5** — asset pipeline, deterministic | **2** — measured: equipment-via-prompt drops CLIP-I 30 points | **5** — 3D side adds equipment, 2D side reuses cached video templates |
+| **角色 / 风格 一致性可控性** | **5** — parametric, repeatable | **3** — measured: cross-frame 0.976 ✓ but prompt drift on equipment | **4** — 3D ref locks identity; 2D motion preserves it |
+| **从今天到 MVP 的预估工时** | **3-6 weeks** (rigging port to ARM OR setup x86 worker + UniRig integration + retarget pipeline) | **1-2 weeks** (productionize I2V; Animate works today) | **2-4 weeks** (Asset Contract design + 3D→2D bridge + video service) |
+| **核心硬伤 / 红旗数量** | **3** (rigging-on-ARM blocked, anime-aware retop missing, Blender-deps) | **3** (per-second cost ~11 min, character drift on prompt swap, no equipment via prompt) | **3** (双倍 plumbing, 3D→2D bridge aesthetic risk, runtime caching mandatory) |
 
-### Sentence-level verdict per path
+### Sentence-level verdict per path (post-measurement)
 
-- **Path A**: _"3D mesh works today. Rigging needs an x86 worker or 1-2 weeks of ARM porting. From today to MVP: 3-6 weeks."_
-- **Path B**: _"I2V image-to-video runs on this ARM box (pending final confirmation). Animate-14B works after fixing preprocess deps. From today to MVP: 1-2 weeks. The wall is sandbox-scale combinatorics."_
-- **Path C** (recommended): _"Hybrid. 3D for the immutable character/equipment library; 2D video for performance / animation in-game cutscenes. Use the strength of each."_
+- **Path A**: _"3D mesh + texture run on this hardware (4 min). Retop is fast. **Rigging is x86-only on the open-source side**, you need an x86 worker. From today to MVP: 3-6 weeks of integration."_
+- **Path B**: _"Wan 2.2 14B I2V runs on aarch64 in 23 min for 2 sec @ 832×480, **CLIP-I 0.954 to ref**. **But equipment via prompt drops CLIP-I 30 points** — pure-B fails AC-3. From today to MVP: 1-2 weeks if you don't need equipment combinatorics."_
+- **Path C** (recommended): _"Hybrid wins on AC-3. 3D side handles immutable identity + equipment composition deterministically (Path A's strength); 2D video model conditioned on rendered ref handles motion delivery (Path B's strength, where it gets to ride on a stable ref). **From today to MVP: 2-4 weeks**, with biggest dependency being the Asset Contract design (which is needed regardless)."_
 
 ---
 

@@ -6,3 +6,30 @@ E-07,retop_actual_faces,19600,count,1,target=8000 (trimesh quadric),2026-04-27T0
 E-07,retop_time,0.5232243537902832,seconds,1,target=8000 faces,2026-04-27T08:34:06Z
 E-07,retop_actual_faces,19600,count,1,target=5000 (trimesh quadric),2026-04-27T08:34:06Z
 E-07,retop_time,0.523810863494873,seconds,1,target=5000 faces,2026-04-27T08:34:06Z
+E-11-I2V,model,Wan 2.2 I2V-A14B,,1,"image-to-video, no driving video",2026-04-27T08:59:49Z
+E-11-I2V,frame_num,33,frames,1,~2 sec @ 16fps,2026-04-27T08:59:49Z
+E-11-I2V,resolution,832x480,,1,first test,2026-04-27T08:59:49Z
+E-11-I2V,generation_time,1391.3,seconds,1,end-to-end including model load,2026-04-27T08:59:49Z
+E-11-I2V,output_size_MB,1.4,MB,1,video file,2026-04-27T08:59:49Z
+E-11-I2V,frames_actual,33,count,1,video frames,2026-04-27T09:03:02Z
+E-11-I2V,clip_i_to_ref_mean,0.9536,cosine,8,8 sampled frames vs ref,2026-04-27T09:03:02Z
+E-11-I2V,clip_i_to_ref_std,0.011,cosine,8,stability across frames,2026-04-27T09:03:02Z
+E-11-I2V,clip_i_cross_frame_mean,0.9756,cosine,56,off-diagonal 8x8,2026-04-27T09:03:02Z
+E-11-I2V,clip_i_cross_frame_min,0.9451,cosine,1,least-similar pair,2026-04-27T09:03:02Z
+E-11-equipment,clip_i_default_vs_orig,0.7481,cosine,1,SDXL prompt-only outfit variant,2026-04-27T09:05:12Z
+E-11-equipment,clip_i_armor_vs_orig,0.6226,cosine,1,SDXL prompt-only outfit variant,2026-04-27T09:05:12Z
+E-11-equipment,clip_i_school_uniform_vs_orig,0.697,cosine,1,SDXL prompt-only outfit variant,2026-04-27T09:05:12Z
+E-11-equipment,clip_i_swimwear_vs_orig,0.6134,cosine,1,SDXL prompt-only outfit variant,2026-04-27T09:05:12Z
+E-11-equipment,clip_i_default_vs_orig,0.7481,cosine,1,SDXL prompt-only outfit variant,2026-04-27T09:05:17Z
+E-11-equipment,clip_i_armor_vs_orig,0.6226,cosine,1,SDXL prompt-only outfit variant,2026-04-27T09:05:17Z
+E-11-equipment,clip_i_school_uniform_vs_orig,0.697,cosine,1,SDXL prompt-only outfit variant,2026-04-27T09:05:17Z
+E-11-equipment,clip_i_swimwear_vs_orig,0.6134,cosine,1,SDXL prompt-only outfit variant,2026-04-27T09:05:17Z
+E-05,shape_inference_time,65.0,seconds,1,Hunyuan3D 2.0 shape on alice 1024x1024 input,2026-04-27T08:27:15Z
+E-05,texture_inference_time,198.1,seconds,1,Hunyuan3D Paint pipeline,2026-04-27T08:32:00Z
+E-05,total_e2e_time,263.0,seconds,1,Hunyuan3D shape+texture full pipeline,2026-04-27T08:32:00Z
+E-05,n_vertices_initial,209131,count,1,raw shape mesh,2026-04-27T08:27:15Z
+E-05,n_faces_initial,418300,count,1,raw shape mesh,2026-04-27T08:27:15Z
+E-05,n_vertices_textured,327022,count,1,after UV seams in texture pipeline,2026-04-27T08:32:00Z
+E-05,gpu_peak_shape,5.99,GB,1,Hunyuan3D-DiT,2026-04-27T08:27:15Z
+E-05,gpu_peak_texture,10.45,GB,1,Hunyuan3D-Paint,2026-04-27T08:32:00Z
+E-05,texture_resolution,2048,pixels,1,square PBR,2026-04-27T08:32:00Z
