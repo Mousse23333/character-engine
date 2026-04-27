@@ -1,4 +1,4 @@
-# Executive Summary — Paradigm Comparison (2D vs 3D) — FINAL
+# Executive Summary — Paradigm Comparison (2D vs 3D) — FINAL (with architect corrections)
 
 **Date**: 2026-04-27 morning session
 **Investigator**: Claude Opus 4.7 (1M context)
@@ -7,12 +7,25 @@
 
 ---
 
+## 📝 Architect corrections (post-session)
+
+After reviewing demos:
+1. **I2V output > Animate-14B output in visual quality** — I had ranked Animate higher because it produces real motion, but architect's view is that I2V's cleaner / higher-resolution / fewer-artifact output is the better deliverable. Animate-14B's 624×624 downsampled output with hand artifacts is a regression from I2V's 736×528 clean frames.
+2. **3D mesh quality is acceptable** — I described Hunyuan3D mesh as "non-manifold, needs cleanup". Architect's view: it's "not that bad" and ready-enough for downstream use. **This raises Path A's standalone viability.**
+
+These corrections re-weight the conclusions below. The original Path C recommendation may still hold but **the "Animate-14B handles motion delivery" tactic should be replaced with either (a) I2V on stable ref, accepting subtle motion, or (b) a different motion-delivery strategy.** Will revise architectural recommendation pending further direction from architect.
+
+---
+
 ## TL;DR (5-minute read)
 
-**Both paths run on this hardware**. After measuring both, my recommendation is **Path C — Hybrid 2D+3D**:
+**Both paths run on this hardware**. My initial recommendation was **Path C — Hybrid 2D+3D** with Animate-14B for motion delivery. **After architect's review (see top of file)**, the recommendation is being revised:
 
-> **Identity / Equipment Asset = 3D mesh (Path A's strength: deterministic composition).**
-> **Animation Asset = 2D video clip conditioned on a 3D-rendered reference image (Path B's strength: motion quality with stable identity).**
+> **Path A (3D pipeline) is more viable than I credited it** — mesh quality is acceptable; only rigging-on-ARM is blocked. With an x86 worker, full 3D pipeline is reachable. Path A may be the right primary path for the project.
+>
+> **Path B with I2V (NOT Animate-14B) is the right 2D video tactic** — I2V produces cleaner output despite less motion. If 2D video is used at all, it's I2V, not Animate.
+>
+> **Path C still tenable but needs new motion-delivery tactic**: 3D-rendered ref → I2V (subtle motion) instead of 3D-rendered ref → Animate-14B (motion-controlled but lower visual quality).
 
 Why hybrid wins on the data measured today:
 

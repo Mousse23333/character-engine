@@ -1,4 +1,4 @@
-# ARCHITECT_DECISIONS — Paradigm Comparison Day (FINAL)
+# ARCHITECT_DECISIONS — Paradigm Comparison Day (REVISED post-architect-review)
 
 **Audience**: project architect (you)
 **Cross-reference**: `EXECUTIVE_SUMMARY.md` for the 9-dim score; this file is action-oriented.
@@ -6,9 +6,38 @@
 
 ---
 
-## TL;DR — recommend collapsing AC-0 to Path C (hybrid)
+## 📝 Visual-quality re-calibration (architect feedback)
 
-**Recommendation**: AC-0 → **Path C: 3D-identity + 2D-video-animation**.
+After reviewing demos, architect noted:
+
+1. **I2V output is visually superior to Animate-14B output.** I had biased toward "Animate has real motion = better"; the architect's view is that visual cleanness, resolution, lack of artifacts matter more than motion control. I2V at 736×528 with stable character > Animate at 624×624 with hand drift, even if I2V's character barely moves.
+
+2. **3D mesh quality is acceptable** — I described Hunyuan3D output as "non-manifold, needs cleanup". The architect's read: it's good enough for the project's purposes today.
+
+**Implications for the recommendation below**:
+
+- **Path A is more viable as a standalone path than my original report implied.** If mesh is "good enough" today, the only blocker is open-source rigging on ARM — which is purely a tooling problem, recoverable on x86.
+- **Path B should use I2V, not Animate-14B**, when used. The motion-quality tradeoff favors I2V's polished stillness over Animate's motion-with-artifacts.
+- **Path C still holds in spirit** (3D for identity, 2D for finishing motion), but the 2D-side tactic shifts from "Animate-14B drive video" to "I2V on a 3D-rendered ref" — which means I2V's subtle-motion limit becomes the project's motion-quality ceiling.
+
+Below sections are revised accordingly.
+
+---
+
+## TL;DR — REVISED recommendation
+
+**Original recommendation**: AC-0 → Path C (hybrid).
+**Revised recommendation after visual review**: **Path A primary, Path B (I2V) auxiliary.**
+
+> **Path A (3D-first)** for the canonical character pipeline:
+> Hunyuan3D 2.0 mesh + texture (works ✅) → retop (works ✅) → x86 worker UniRig auto-rig → animation library.
+> Mesh quality acceptable per architect.
+>
+> **Path B (I2V) as auxiliary**, NOT primary path:
+> Use I2V for promotional / cinematic / hero shots where visual polish > motion control.
+> Wan 2.2 Animate-14B is **deprioritized** — its motion control isn't worth the visual quality regression.
+>
+> **Path C (hybrid)** still tenable as a longer-term option, but only if (a) 3D ref render aesthetic aligns with I2V, AND (b) "subtle motion" is acceptable for the project's animation use cases. If real motion is needed, you go back to driving the rigged 3D character (Path A complete).
 
 ```
 Identity Asset (immutable, versioned) = 3D mesh
