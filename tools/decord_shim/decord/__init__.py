@@ -73,6 +73,20 @@ class VideoReader:
     def get_avg_fps(self):
         return self._fps
 
+    def get_frame_timestamp(self, idx):
+        """Mimic decord.VideoReader.get_frame_timestamp(idx) -> (start_t, end_t).
+        For idx=-1, return last frame's timestamps.
+        """
+        n = len(self)
+        if idx < 0:
+            idx = n + idx
+        idx = max(0, min(idx, n - 1))
+        # one frame's duration:
+        dt = 1.0 / self._fps
+        start = idx * dt
+        end = (idx + 1) * dt
+        return (start, end)
+
     def __getitem__(self, idx):
         self._populate_cache()
         if isinstance(idx, slice):
