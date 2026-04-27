@@ -66,8 +66,9 @@ The architect's #1 priority is end-to-end Path B confirmation. Animate-14B has a
 1. **Wan 2.2 14B I2V loads and runs on aarch64 + CUDA 13.1** ✅ — every dependency that was a question yesterday (flash_attn, triton, decord shim) actually held up.
 2. **Memory headroom is workable**: 119 GB unified is enough for 14B MoE with offload between experts. Peak load 93 GB, settles to ~50 GB during inference.
 3. **Per-second-of-video cost ~11 min** on this hardware at 832×480. For batch / offline pipelines, this is workable. For real-time — not even close. **AC-3 (sandbox + state explosion) requires aggressive caching** if Path B is used for animation.
-4. **Identity preservation is excellent**: 0.954 CLIP-I to ref. The "character drift" concern from yesterday's analysis didn't materialize for I2V on a 2-second clip.
-5. **The high→low expert swap at boundary timestep (step 16) is a one-time ~165 s penalty** — informs scheduling (don't run multiple Wan jobs interleaved if you can avoid the swap).
+4. **Identity preservation is excellent (cross-frame), but identity match to original ref is "anime-style match" not "exact-character match"**: CLIP-I 0.954 to ref — but visual inspection shows **the character has drifted from the precise Alice silhouette** (slightly different hair, ribbon color became darker, proportions more standard anime). The model preserved STYLE + design space, but not EXACT identity. **This is the gap an architect should know about: Wan 2.2 I2V is a "concept-aligned" generator, not a "character-clone" generator** — you need IP-Adapter / Animate-14B with explicit ref conditioning for stricter ID preservation.
+5. **The "walking forward" prompt produced near-static motion** — frame 0 and frame 32 are visually almost identical. Wan I2V without an explicit motion source defaults to "subtle character animation" (breathing, hair sway), not locomotion. **For real motion control, Animate-14B with driving video is required.** This validates yesterday's discovery D-01: I2V is the "1 model, no preprocess" easy path; Animate-14B is the "real motion" hard path.
+6. **The high→low expert swap at boundary timestep (step 16) is a one-time ~165 s penalty** — informs scheduling (don't run multiple Wan jobs interleaved if you can avoid the swap).
 
 ## Files
 
