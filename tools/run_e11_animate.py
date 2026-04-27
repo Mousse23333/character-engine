@@ -1,29 +1,24 @@
-"""E-11-Animate: Wan 2.2 Animate-14B end-to-end on Alice + driving video.
+"""E-11-Animate: Wan 2.2 Animate-14B end-to-end on Alice + Wan example driving video.
 
-Workflow:
-  1. Preprocess: extract pose + face from driving video (uses Wan's preprocess module)
-  2. Generate: Wan2.2-Animate-14B(ref_image=alice, processed_motion) → animated video
-  3. Score: per-frame CLIP-I, hand/face artifact rate, time, VRAM
+Two-step run:
+  1. Preprocess (on CPU ONNX since no onnxruntime-gpu on ARM):
+        wan_animate/preprocess_data.py → pose / face conditioning
+  2. Generate via Wan 2.2 Animate-14B inference
 
-Note: This script assumes:
-  - decord shim is installed (we did this earlier)
-  - Wan 2.2 Animate-14B weights are at /home/daniel/.cache/huggingface/hub/models--Wan-AI--Wan2.2-Animate-14B/snapshots/<id>/
-  - The driving video is examples/wan_animate/animate/video.mp4 (bundled with Wan repo)
-
-Run mode: animation (NOT replace mode — replace requires SAM2 mask which we skip).
+Outputs: alice_animated.mp4 in samples/
 """
 import os, sys, time, subprocess, json
 from pathlib import Path
 
-# Use mesa libGL for any opengl-leaning deps
+# Use mesa libGL workaround
 os.environ["LD_LIBRARY_PATH"] = (
     "/workspace/character-engine/tools/blender-4.5.1-git20250730.28c0962c45ac-aarch64/lib/mesa:"
     + os.environ.get("LD_LIBRARY_PATH", "")
 )
+os.environ["PYTHONUNBUFFERED"] = "1"
 
 ROOT = Path("/workspace/character-engine")
 WAN = ROOT / "tools/Wan2.2"
-sys.path.insert(0, str(WAN))
 
 OUT = ROOT / "pgx_reports/2026-04-27-paradigm-comparison/path-B-2D-video/E-11-animate"
 SAMPLES = OUT / "samples"
@@ -31,100 +26,133 @@ LOGS = OUT / "logs"
 SAMPLES.mkdir(parents=True, exist_ok=True)
 LOGS.mkdir(parents=True, exist_ok=True)
 
-# ===== Step 0: confirm Animate-14B model is downloaded =====
 ANIMATE_DIR = list(Path("/home/daniel/.cache/huggingface/hub/models--Wan-AI--Wan2.2-Animate-14B/snapshots").glob("*"))[0]
 PROCESS_CKPT = ANIMATE_DIR / "process_checkpoint"
-print(f"Animate model dir: {ANIMATE_DIR}")
-print(f"Process checkpoint dir: {PROCESS_CKPT}")
-assert PROCESS_CKPT.exists(), f"process_checkpoint not found at {PROCESS_CKPT}"
+print(f"Animate model: {ANIMATE_DIR.name}")
+print(f"Process ckpt:  {PROCESS_CKPT}")
 
-# Check that the main 14B safetensors are present (pattern: diffusion_pytorch_model-00001-of-XXXX.safetensors)
-shards = list(ANIMATE_DIR.glob("diffusion_pytorch_model-*.safetensors"))
-print(f"Found {len(shards)} weight shards (expected ~6+)")
-
-# ===== Step 1: Prepare inputs =====
-# Reference image: alice (square 1024)
 alice_ref = ROOT / "pgx_reports/2026-04-27-paradigm-comparison/path-B-2D-video/E-11-animate/samples/alice_ref_1024.png"
 if not alice_ref.exists():
-    # Build it from the upscaled image
     src = ROOT / "pgx_reports/2026-04-26-overnight/E-00-data-augmentation/samples/02_realesrgan_x4_756x1068.png"
     from PIL import Image
     img = Image.open(src).convert("RGB")
-    w, h = img.size
-    side = min(w, h); l = (w - side)//2; t = (h - side)//2
+    w, h = img.size; side = min(w, h); l = (w - side)//2; t = (h - side)//2
     sq = img.crop((l, t, l+side, t+side)).resize((1024, 1024), Image.LANCZOS)
     sq.save(alice_ref)
     print(f"Built {alice_ref.name}: {sq.size}")
 
-# Driving video: use Wan's bundled example
 DRIVE_VIDEO = WAN / "examples/wan_animate/animate/video.mp4"
-print(f"Driving video: {DRIVE_VIDEO}, exists={DRIVE_VIDEO.exists()}")
+print(f"Driving video: {DRIVE_VIDEO}")
+assert DRIVE_VIDEO.exists()
 
-# ===== Step 2: Preprocess driving video → pose / face / bg / mask =====
 PROCESS_OUT = SAMPLES / "preprocessed"
 PROCESS_OUT.mkdir(exist_ok=True)
 
-print("\n=== Preprocessing driving video ===")
+# ============================================================
+# Step 1: Preprocess (CPU ONNX path)
+# ============================================================
+print("\n=== Preprocessing driving video (CPU ONNX — slow but ARM-compatible) ===")
 t0 = time.time()
-preprocess_cmd = [
-    str(WAN / "wan/modules/animate/preprocess/preprocess_data.py"),
+
+# Build a wrapper script that monkey-patches onnxruntime to force CPU,
+# then runs preprocess_data.py with proper argv
+preprocess_args = [
     "--ckpt_path", str(PROCESS_CKPT),
     "--video_path", str(DRIVE_VIDEO),
     "--refer_path", str(alice_ref),
     "--save_path", str(PROCESS_OUT),
-    "--resolution_area", "832", "480",  # smaller resolution for first test
+    "--resolution_area", "832", "480",
     "--retarget_flag",
-    # NO --use_flux (closed-source weights)
-    # NO --replace_flag (animation mode, not replace)
 ]
-print("CMD:", " ".join(preprocess_cmd))
+
+wrapper_code = (
+    "import onnxruntime as _ort\n"
+    "_orig = _ort.InferenceSession\n"
+    "def _cpu_session(*a, **k):\n"
+    "    k['providers'] = ['CPUExecutionProvider']\n"
+    "    return _orig(*a, **k)\n"
+    "_ort.InferenceSession = _cpu_session\n"
+    "import sys\n"
+    f"sys.argv = ['preprocess_data.py'] + {preprocess_args!r}\n"
+    "import runpy\n"
+    f"runpy.run_path('{WAN}/wan/modules/animate/preprocess/preprocess_data.py', run_name='__main__')\n"
+)
+
 ret = subprocess.run(
-    [sys.executable] + preprocess_cmd,
+    [sys.executable, "-c", wrapper_code],
     cwd=str(WAN / "wan/modules/animate/preprocess"),
-    env={**os.environ, "PYTHONPATH": str(WAN), "LD_LIBRARY_PATH": os.environ["LD_LIBRARY_PATH"]},
-    capture_output=False,
+    env={
+        **os.environ,
+        "PYTHONPATH": (
+            f"{WAN}:"
+            f"{WAN}/wan/modules/animate/preprocess:"
+            + os.environ.get("PYTHONPATH", "")
+        ),
+        "LD_LIBRARY_PATH": os.environ["LD_LIBRARY_PATH"],
+    },
 )
 preprocess_time = time.time() - t0
-print(f"\npreprocess ret={ret.returncode}, time={preprocess_time:.1f}s")
+print(f"\npreprocess return={ret.returncode}, time={preprocess_time:.1f}s "
+      f"({preprocess_time/60:.1f} min)")
 
 if ret.returncode != 0:
-    print("PREPROCESS FAILED — see preceding output for details")
-    print("This is a key checkpoint. Writing partial result to RAW_NUMBERS.")
-    # Persist failure note
-    with open(OUT / "PREPROCESS_FAILED.txt", "w") as f:
-        f.write(f"preprocess returncode: {ret.returncode}\nelapsed: {preprocess_time:.1f}s\n")
+    print("PREPROCESS FAILED.")
+    (OUT / "PREPROCESS_FAILED.txt").write_text(
+        f"return={ret.returncode}, time={preprocess_time:.1f}s\nSee logs/run.log\n"
+    )
     sys.exit(1)
-print(f"\npreprocess done. Outputs in {PROCESS_OUT}")
-print("contents:", list(PROCESS_OUT.iterdir())[:10])
 
-# ===== Step 3: Generate animation =====
-print("\n=== Generating animated video ===")
+print(f"Preprocessed outputs: {list(PROCESS_OUT.iterdir())[:10]}")
+
+# ============================================================
+# Step 2: Generate animation
+# ============================================================
+print("\n=== Generating animated video (Wan 2.2 Animate-14B) ===")
+out_video = SAMPLES / "alice_animated.mp4"
 t0 = time.time()
+
 generate_cmd = [
-    "generate.py",
+    sys.executable,
+    str(WAN / "generate.py"),
     "--task", "animate-14B",
     "--ckpt_dir", str(ANIMATE_DIR),
     "--src_root_path", str(PROCESS_OUT),
     "--refert_num", "1",
-    "--save_file", str(SAMPLES / "alice_animated.mp4"),
-    "--frame_num", "81",  # ~5 sec at 16fps; must be 4n+1
+    "--save_file", str(out_video),
+    "--frame_num", "33",  # ~2 sec @ 16fps; 4n+1
     "--offload_model", "True",
     "--convert_model_dtype",
+    "--t5_cpu",
 ]
 print("CMD:", " ".join(generate_cmd))
+
 ret = subprocess.run(
-    [sys.executable] + generate_cmd,
+    generate_cmd,
     cwd=str(WAN),
-    env={**os.environ, "PYTHONPATH": str(WAN), "LD_LIBRARY_PATH": os.environ["LD_LIBRARY_PATH"]},
-    capture_output=False,
+    env={
+        **os.environ,
+        "PYTHONPATH": str(WAN),
+        "LD_LIBRARY_PATH": os.environ["LD_LIBRARY_PATH"],
+    },
 )
 gen_time = time.time() - t0
-print(f"\ngenerate ret={ret.returncode}, time={gen_time:.1f}s ({gen_time/60:.1f} min)")
+print(f"\ngenerate return={ret.returncode}, time={gen_time:.1f}s ({gen_time/60:.1f} min)")
 
-if ret.returncode != 0:
-    print("GENERATE FAILED")
-    sys.exit(1)
-print(f"Output video: {SAMPLES / 'alice_animated.mp4'}")
-print(f"=== E-11-Animate end-to-end SUCCESS ===")
-print(f"  preprocess: {preprocess_time:.0f}s")
-print(f"  generation: {gen_time:.0f}s ({gen_time/60:.1f} min)")
+if ret.returncode == 0 and out_video.exists():
+    print(f"\n=== ANIMATE-14B END-TO-END SUCCESS ===")
+    print(f"  preprocess: {preprocess_time:.0f}s ({preprocess_time/60:.1f} min)")
+    print(f"  generation: {gen_time:.0f}s ({gen_time/60:.1f} min)")
+    print(f"  output: {out_video} ({out_video.stat().st_size/1e6:.1f} MB)")
+
+    # Persist metric
+    import csv
+    csv_path = ROOT / "pgx_reports/2026-04-27-paradigm-comparison/RAW_NUMBERS.csv"
+    ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    with open(csv_path, "a", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["E-11-Animate", "preprocess_time", round(preprocess_time, 1), "seconds", 1, "CPU ONNX (no GPU on ARM)", ts])
+        w.writerow(["E-11-Animate", "generation_time", round(gen_time, 1), "seconds", 1, "14B inference", ts])
+        w.writerow(["E-11-Animate", "output_size_MB", round(out_video.stat().st_size/1e6, 1), "MB", 1, "alice + Wan example drive", ts])
+        w.writerow(["E-11-Animate", "frame_num", 33, "frames", 1, "~2 sec @ 16fps", ts])
+else:
+    print("ANIMATE GENERATION FAILED")
