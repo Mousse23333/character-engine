@@ -1,6 +1,6 @@
 # E-11-Animate — Wan 2.2 Animate-14B (path B, primary variant)
 
-**Status**: ⏸ **Partial — Animate-14B weights downloaded but preprocess pipeline has ARM friction**
+**Status**: 🟢 **Preprocess WORKED on aarch64; generation in flight**
 **Date**: 2026-04-27
 
 ## Summary
@@ -14,24 +14,22 @@ This morning we attempted to run it. **Weights are now fully cached on this hard
 
 Either issue alone is a soft blocker. Together they make a clean Animate-14B run on this exact aarch64 box require ~half a day of additional engineering.
 
-## What's clean
+## Preprocess result (RAN end-to-end)
 
-| Component | Status |
-|---|---|
-| Animate-14B safetensors weights (4 shards) | ✅ cached |
-| T5 encoder (umt5-xxl) | ✅ cached |
-| VAE (Wan2.1) | ✅ cached |
-| YOLO-v10m detector ONNX (61 MB) | ✅ cached |
-| `decord` ARM shim | ✅ written + tested |
-| Wan repo install (excl. decord, included via shim) | ✅ |
-
-## What's blocking
-
-| Component | Blocker | Work to unblock |
+| Component | Status | Time |
 |---|---|---|
-| `onnxruntime-gpu` | no ARM wheel for any cp version | source-build from `microsoft/onnxruntime` (~2 hours) OR fall back to CPU `onnxruntime` (slow) |
-| `vitpose_h_wholebody.onnx` directory format | repo ships 443 layer files instead of single ONNX | recompose from layer files OR find alternate ViTPose ONNX |
-| `FluxKontextPipeline` (when `--use_flux`) | Flux Kontext closed-source weights | always pass `--use_flux=False` (preprocess accepts this) |
+| Animate-14B safetensors weights (4 shards) | ✅ cached | — |
+| T5 encoder (umt5-xxl) | ✅ cached | — |
+| CLIP (xlm-roberta-large-vit-huge-14) | ✅ cached | — |
+| VAE (Wan2.1) | ✅ cached | — |
+| YOLO-v10m detector ONNX (61 MB) | ✅ ran via CPUExecutionProvider | ~10s |
+| ViTPose-h whole-body ONNX | ✅ ran via CPUExecutionProvider | ~50s for 106 frames |
+| `decord` ARM shim | ✅ extended with `get_frame_timestamp` | — |
+| All Wan deps (loguru, moviepy, sam2 etc.) | ✅ installed | — |
+| `--use_flux=False` to skip closed Flux Kontext | ✅ | — |
+| **Total preprocess** | ✅ | **62 s** |
+
+Outputs: `samples/preprocessed/src_ref.png`, `src_face.mp4`, `src_pose.mp4`
 
 ## Evidence vs. Wan 2.2 I2V (sibling test)
 
